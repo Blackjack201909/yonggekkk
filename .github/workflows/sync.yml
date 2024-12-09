@@ -1,0 +1,51 @@
+name: Sync Fork and Copy File
+
+on:
+  schedule:
+    - cron: '0 5 * * *' # 每天执行一次
+  workflow_dispatch: # 手动触发支持
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork repository
+        uses: actions/checkout@v3
+
+      - name: Setup git
+        run: |
+          git config --global user.name 'Blackjack201909'
+          git config --global user.email '2609958090@qq.com'
+
+      - name: Add upstream repository
+        run: |
+          git remote add upstream https://github.com/yonggekkk/Cloudflare_vless_trojan.git
+          git fetch upstream
+
+      - name: Merge upstream changes
+        run: |
+          git merge upstream/main || true
+
+      - name: Push changes to fork
+        run: |
+          git push origin main
+
+  copy-file:
+    runs-on: ubuntu-latest
+    needs: sync # 确保在同步完成后运行
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Copy worker.js to src directory
+        run: |
+          mkdir -p src
+          cp Vless_workers_pages/_worker.js src/
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'Blackjack201909'
+          git config --global user.email '2609958090@qq.com'
+          git add src/_worker.js
+          git commit -m "Sync worker.js to src directory" || echo "No changes to commit"
+          git push origin main || echo "No changes to push"
